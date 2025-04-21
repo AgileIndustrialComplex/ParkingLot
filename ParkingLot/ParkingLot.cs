@@ -9,6 +9,7 @@ public class ParkingLot : IParkingLot
     private readonly IEnumerable<IParkingLevel> levels;
 
     private readonly Dictionary<IParkingSpot, IVehicle> parked = [];
+    private readonly Dictionary<IVehicle, IParkingSpot> parkedInversed = [];
 
     public ParkingLot(IEnumerable<IParkingLevel> levels)
     {
@@ -41,6 +42,7 @@ public class ParkingLot : IParkingLot
                     if (!parked.ContainsKey(spot) && CanPark(vehicle, spot))
                     {
                         parked[spot] = vehicle;
+                        parkedInversed[vehicle] = spot;
                         return spot;
                     }
                 }
@@ -70,6 +72,17 @@ public class ParkingLot : IParkingLot
 
     public void UnPark(IVehicle vehicle)
     {
-        throw new NotImplementedException();
+        var exists = parkedInversed.TryGetValue(vehicle, out var spot);
+        if (!exists)
+        {
+            throw new InvalidOperationException("Vehicle is not parked in the parking lot");
+        }
+        if (spot is null)
+        {
+            throw new InvalidOperationException("Invalid internal state, parking spot for vehicle is null");
+        }
+
+        parkedInversed.Remove(vehicle);
+        parked.Remove(spot);
     }
 }

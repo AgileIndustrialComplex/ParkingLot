@@ -114,4 +114,27 @@ public class ParkingLotTest
 
         Assert.Throws<InvalidOperationException>(() => parkingLot.GetParkingVehicle(spot));
     }
+
+    [Fact]
+    public void ParkingLot_UnPark_ThrowsForVehicleNotInParkingLot()
+    {
+        ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
+
+        ParkingLot parkingLot = new(levels);
+
+        Assert.Throws<InvalidOperationException>(() => parkingLot.UnPark(new Car()));
+    }
+
+    [Fact]
+    public void ParkingLot_UnPark_RemovesCarFromParkingLot()
+    {
+        ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
+
+        ParkingLot parkingLot = new(levels);
+        var car = new Car();
+        var spot = parkingLot.Park(car);
+        parkingLot.UnPark(car);
+
+        Assert.Throws<InvalidOperationException>(() => parkingLot.GetParkingVehicle(spot));
+    }
 }
