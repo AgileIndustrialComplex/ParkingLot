@@ -1,9 +1,23 @@
+using Moq;
+using ParkingLot.Interfaces;
 using ParkingLot.Models;
 
 namespace ParkingLot.Test;
 
 public class ParkingLotTest
 {
+    private readonly Mock<IParkingSpotValidator> validatorMock;
+    private readonly Mock<IParkingStorage> storageMock;
+
+    public ParkingLotTest()
+    {
+        validatorMock = new Mock<IParkingSpotValidator>();
+        validatorMock.Setup(x => x.VehicleType).Returns(typeof(Car));
+        validatorMock.Setup(x => x.CanPark(It.IsAny<IVehicle>(), It.IsAny<IParkingSpot>())).Returns(true);
+
+        storageMock = new Mock<IParkingStorage>();
+    }
+
     [Fact]
     public void ParkingLot_Park_ReturnsParkingSpot()
     {
@@ -17,7 +31,9 @@ public class ParkingLotTest
             ])
         ];
 
-        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
+
+
+        ParkingLot parkingLot = new(levels, [validatorMock.Object], storageMock.Object);
         Car vehicle = new();
 
         var actual = parkingLot.Park(vehicle);
@@ -30,7 +46,7 @@ public class ParkingLotTest
     {
         ParkingLevel[] levels = [new([new ParkingRow([])])];
 
-        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
+        ParkingLot parkingLot = new(levels, [validatorMock.Object], storageMock.Object);
         Car vehicle = new();
 
         Assert.Throws<InvalidOperationException>(() => parkingLot.Park(vehicle));
@@ -43,10 +59,9 @@ public class ParkingLotTest
             new CarParkingSpot(), new CarParkingSpot()
         ])])];
 
-        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
+        storageMock.Setup(x => x.Has(It.IsAny<IParkingSpot>())).Returns(true);
 
-        _ = parkingLot.Park(new Car());
-        _ = parkingLot.Park(new Car());
+        ParkingLot parkingLot = new(levels, [validatorMock.Object], storageMock.Object);
 
         Assert.Throws<InvalidOperationException>(() => parkingLot.Park(new Car()));
     }
@@ -58,7 +73,9 @@ public class ParkingLotTest
             new MotorcycleParkingSpot()
         ])])];
 
-        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
+        validatorMock.Setup(x => x.CanPark(It.IsAny<IVehicle>(), It.IsAny<IParkingSpot>())).Returns(false);
+
+        ParkingLot parkingLot = new(levels, [validatorMock.Object], storageMock.Object);
 
         Assert.Throws<InvalidOperationException>(() => parkingLot.Park(new Car()));
     }
@@ -69,7 +86,9 @@ public class ParkingLotTest
         var spot = new CarParkingSpot();
         ParkingLevel[] levels = [new([new ParkingRow([spot])])];
 
-        ParkingLot parkingLot = new(levels, [new MotorcycleParkingLotValidator()]);
+        validatorMock.Setup(x => x.VehicleType).Returns(typeof(Motorcycle));
+
+        ParkingLot parkingLot = new(levels, [validatorMock.Object], storageMock.Object);
 
         var actual = parkingLot.Park(new Motorcycle());
 
@@ -79,63 +98,14 @@ public class ParkingLotTest
     [Fact]
     public void ParkingLot_GetParkingVehicle_ReturnsParkedVehicleForSpot()
     {
-        ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
-
-        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
-
+        CarParkingSpot spot = new();
         var expected = new Car();
-        var spot = parkingLot.Park(expected);
+        storageMock.Setup(x => x.Get(spot)).Returns(expected);
+
+        ParkingLot parkingLot = new([], [validatorMock.Object], storageMock.Object);
 
         var actual = parkingLot.GetParkingVehicle(spot);
-
         Assert.Equal(expected, actual);
-    }
-
-    [Fact]
-    public void ParkingLot_GetParkingVehicle_ThrowsForParkingSpotNotInParkingLot()
-    {
-        ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
-
-        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
-
-        var car = new Car();
-        var spot = parkingLot.Park(car);
-
-        Assert.Throws<InvalidOperationException>(() => parkingLot.GetParkingVehicle(new CarParkingSpot()));
-    }
-
-    [Fact]
-    public void ParkingLot_GetParkingVehicle_ThrowsForFreeParkingSpot()
-    {
-        CarParkingSpot spot = new();
-        ParkingLevel[] levels = [new([new ParkingRow([spot])])];
-
-        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
-
-        Assert.Throws<InvalidOperationException>(() => parkingLot.GetParkingVehicle(spot));
-    }
-
-    [Fact]
-    public void ParkingLot_UnPark_ThrowsForVehicleNotInParkingLot()
-    {
-        ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
-
-        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
-
-        Assert.Throws<InvalidOperationException>(() => parkingLot.UnPark(new Car()));
-    }
-
-    [Fact]
-    public void ParkingLot_UnPark_RemovesCarFromParkingLot()
-    {
-        ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
-
-        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
-        var car = new Car();
-        var spot = parkingLot.Park(car);
-        parkingLot.UnPark(car);
-
-        Assert.Throws<InvalidOperationException>(() => parkingLot.GetParkingVehicle(spot));
     }
 
     [Fact]
@@ -143,7 +113,7 @@ public class ParkingLotTest
     {
         ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
 
-        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
+        ParkingLot parkingLot = new(levels, [validatorMock.Object], storageMock.Object);
         var car = new Car();
 
         Assert.Throws<InvalidOperationException>(() => parkingLot.GetValidator(new Motorcycle()));

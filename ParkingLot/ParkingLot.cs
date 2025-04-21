@@ -1,4 +1,5 @@
 using System.Data;
+using System.Data.SqlTypes;
 using Microsoft.VisualBasic;
 using ParkingLot.Interfaces;
 using ParkingLot.Models;
@@ -8,30 +9,20 @@ namespace ParkingLot;
 public class ParkingLot : IParkingLot
 {
     private readonly IEnumerable<IParkingLevel> levels;
-
-    private readonly Dictionary<IParkingSpot, IVehicle> parked = [];
-    private readonly Dictionary<IVehicle, IParkingSpot> parkedInversed = [];
+    private readonly IParkingStorage storage;
     private readonly Dictionary<Type, IParkingSpotValidator> validators;
 
-    public ParkingLot(IEnumerable<IParkingLevel> levels, IEnumerable<IParkingSpotValidator> validators)
+    public ParkingLot(IEnumerable<IParkingLevel> levels, IEnumerable<IParkingSpotValidator> validators, IParkingStorage storage)
     {
         this.levels = levels;
+        this.storage = storage;
         this.validators = validators.Select(v => KeyValuePair.Create(v.VehicleType, v)).ToDictionary();
     }
 
     public IVehicle GetParkingVehicle(IParkingSpot spot)
     {
-        var exists = parked.TryGetValue(spot, out var vehicle);
-        if (exists && vehicle is not null)
-        {
-            return vehicle;
-        }
-        if (!exists)
-        {
-            throw new InvalidOperationException("Parking spot not in parking lot");
-        }
-
-        throw new InvalidOperationException("Parking spot is not occupied");
+        var vehicle = storage.Get(spot);
+        return vehicle;
     }
 
     public IParkingSpot Park(IVehicle vehicle)
@@ -43,10 +34,9 @@ public class ParkingLot : IParkingLot
             {
                 foreach (var spot in row)
                 {
-                    if (!parked.ContainsKey(spot) && validator.CanPark(vehicle, spot))
+                    if (!storage.Has(spot) && validator.CanPark(vehicle, spot))
                     {
-                        parked[spot] = vehicle;
-                        parkedInversed[vehicle] = spot;
+                        storage.Create(vehicle, spot);
                         return spot;
                     }
                 }
@@ -68,17 +58,6 @@ public class ParkingLot : IParkingLot
 
     public void UnPark(IVehicle vehicle)
     {
-        var exists = parkedInversed.TryGetValue(vehicle, out var spot);
-        if (!exists)
-        {
-            throw new InvalidOperationException("Vehicle is not parked in the parking lot");
-        }
-        if (spot is null)
-        {
-            throw new InvalidOperationException("Invalid internal state, parking spot for vehicle is null");
-        }
-
-        parkedInversed.Remove(vehicle);
-        parked.Remove(spot);
+        storage.Remove(vehicle);
     }
 }
