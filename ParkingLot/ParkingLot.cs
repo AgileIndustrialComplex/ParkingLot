@@ -1,3 +1,4 @@
+using Microsoft.VisualBasic;
 using ParkingLot.Interfaces;
 using ParkingLot.Models;
 
@@ -16,7 +17,17 @@ public class ParkingLot : IParkingLot
 
     public IVehicle GetParkingVehicle(IParkingSpot spot)
     {
-        throw new NotImplementedException();
+        var exists = parked.TryGetValue(spot, out var vehicle);
+        if (exists && vehicle is not null)
+        {
+            return vehicle;
+        }
+        if (!exists)
+        {
+            throw new InvalidOperationException("Parking spot not in parking lot");
+        }
+
+        throw new InvalidOperationException("Parking spot is not occupied");
     }
 
     public IParkingSpot Park(IVehicle vehicle)

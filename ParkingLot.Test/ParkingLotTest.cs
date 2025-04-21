@@ -75,4 +75,43 @@ public class ParkingLotTest
 
         Assert.Equal(spot, actual);
     }
+
+    [Fact]
+    public void ParkingLot_GetParkingVehicle_ReturnsParkedVehicleForSpot()
+    {
+        ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
+
+        ParkingLot parkingLot = new(levels);
+
+        var expected = new Car();
+        var spot = parkingLot.Park(expected);
+
+        var actual = parkingLot.GetParkingVehicle(spot);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void ParkingLot_GetParkingVehicle_ThrowsForParkingSpotNotInParkingLot()
+    {
+        ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
+
+        ParkingLot parkingLot = new(levels);
+
+        var car = new Car();
+        var spot = parkingLot.Park(car);
+
+        Assert.Throws<InvalidOperationException>(() => parkingLot.GetParkingVehicle(new CarParkingSpot()));
+    }
+
+    [Fact]
+    public void ParkingLot_GetParkingVehicle_ThrowsForFreeParkingSpot()
+    {
+        CarParkingSpot spot = new();
+        ParkingLevel[] levels = [new([new ParkingRow([spot])])];
+
+        ParkingLot parkingLot = new(levels);
+
+        Assert.Throws<InvalidOperationException>(() => parkingLot.GetParkingVehicle(spot));
+    }
 }
