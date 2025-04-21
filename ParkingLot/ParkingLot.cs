@@ -1,3 +1,4 @@
+using System.Data;
 using Microsoft.VisualBasic;
 using ParkingLot.Interfaces;
 using ParkingLot.Models;
@@ -10,10 +11,12 @@ public class ParkingLot : IParkingLot
 
     private readonly Dictionary<IParkingSpot, IVehicle> parked = [];
     private readonly Dictionary<IVehicle, IParkingSpot> parkedInversed = [];
+    private readonly Dictionary<Type, IParkingSpotValidator> validators;
 
-    public ParkingLot(IEnumerable<IParkingLevel> levels)
+    public ParkingLot(IEnumerable<IParkingLevel> levels, IEnumerable<IParkingSpotValidator> validators)
     {
         this.levels = levels;
+        this.validators = validators.Select(v => KeyValuePair.Create(v.VehicleType, v)).ToDictionary();
     }
 
     public IVehicle GetParkingVehicle(IParkingSpot spot)
@@ -33,13 +36,14 @@ public class ParkingLot : IParkingLot
 
     public IParkingSpot Park(IVehicle vehicle)
     {
+        var validator = GetValidator(vehicle);
         foreach (var level in levels)
         {
             foreach (var row in level)
             {
                 foreach (var spot in row)
                 {
-                    if (!parked.ContainsKey(spot) && CanPark(vehicle, spot))
+                    if (!parked.ContainsKey(spot) && validator.CanPark(vehicle, spot))
                     {
                         parked[spot] = vehicle;
                         parkedInversed[vehicle] = spot;
@@ -52,22 +56,14 @@ public class ParkingLot : IParkingLot
         throw new InvalidOperationException("No free spots left.");
     }
 
-    public bool CanPark(IVehicle vehicle, IParkingSpot spot)
+    public IParkingSpotValidator GetValidator(IVehicle vehicle)
     {
-        if (vehicle is Car && spot is CarParkingSpot)
+        if (validators.TryGetValue(vehicle.GetType(), out var validator))
         {
-            return true;
-        }
-        if (vehicle is Motorcycle && spot is MotorcycleParkingSpot)
-        {
-            return true;
-        }
-        if (vehicle is Motorcycle && spot is CarParkingSpot)
-        {
-            return true;
+            return validator;
         }
 
-        return false;
+        throw new InvalidOperationException($"No validator found for type: {vehicle.GetType()}");
     }
 
     public void UnPark(IVehicle vehicle)

@@ -17,7 +17,7 @@ public class ParkingLotTest
             ])
         ];
 
-        ParkingLot parkingLot = new(levels);
+        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
         Car vehicle = new();
 
         var actual = parkingLot.Park(vehicle);
@@ -30,7 +30,7 @@ public class ParkingLotTest
     {
         ParkingLevel[] levels = [new([new ParkingRow([])])];
 
-        ParkingLot parkingLot = new(levels);
+        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
         Car vehicle = new();
 
         Assert.Throws<InvalidOperationException>(() => parkingLot.Park(vehicle));
@@ -43,7 +43,7 @@ public class ParkingLotTest
             new CarParkingSpot(), new CarParkingSpot()
         ])])];
 
-        ParkingLot parkingLot = new(levels);
+        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
 
         _ = parkingLot.Park(new Car());
         _ = parkingLot.Park(new Car());
@@ -58,7 +58,7 @@ public class ParkingLotTest
             new MotorcycleParkingSpot()
         ])])];
 
-        ParkingLot parkingLot = new(levels);
+        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
 
         Assert.Throws<InvalidOperationException>(() => parkingLot.Park(new Car()));
     }
@@ -69,7 +69,7 @@ public class ParkingLotTest
         var spot = new CarParkingSpot();
         ParkingLevel[] levels = [new([new ParkingRow([spot])])];
 
-        ParkingLot parkingLot = new(levels);
+        ParkingLot parkingLot = new(levels, [new MotorcycleParkingLotValidator()]);
 
         var actual = parkingLot.Park(new Motorcycle());
 
@@ -81,7 +81,7 @@ public class ParkingLotTest
     {
         ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
 
-        ParkingLot parkingLot = new(levels);
+        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
 
         var expected = new Car();
         var spot = parkingLot.Park(expected);
@@ -96,7 +96,7 @@ public class ParkingLotTest
     {
         ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
 
-        ParkingLot parkingLot = new(levels);
+        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
 
         var car = new Car();
         var spot = parkingLot.Park(car);
@@ -110,7 +110,7 @@ public class ParkingLotTest
         CarParkingSpot spot = new();
         ParkingLevel[] levels = [new([new ParkingRow([spot])])];
 
-        ParkingLot parkingLot = new(levels);
+        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
 
         Assert.Throws<InvalidOperationException>(() => parkingLot.GetParkingVehicle(spot));
     }
@@ -120,7 +120,7 @@ public class ParkingLotTest
     {
         ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
 
-        ParkingLot parkingLot = new(levels);
+        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
 
         Assert.Throws<InvalidOperationException>(() => parkingLot.UnPark(new Car()));
     }
@@ -130,11 +130,22 @@ public class ParkingLotTest
     {
         ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
 
-        ParkingLot parkingLot = new(levels);
+        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
         var car = new Car();
         var spot = parkingLot.Park(car);
         parkingLot.UnPark(car);
 
         Assert.Throws<InvalidOperationException>(() => parkingLot.GetParkingVehicle(spot));
+    }
+
+    [Fact]
+    public void ParkingLot_GetValidator_ThrowsWhenNoValidatorFound()
+    {
+        ParkingLevel[] levels = [new([new ParkingRow([new CarParkingSpot()])])];
+
+        ParkingLot parkingLot = new(levels, [new CarParkingLotValidator()]);
+        var car = new Car();
+
+        Assert.Throws<InvalidOperationException>(() => parkingLot.GetValidator(new Motorcycle()));
     }
 }
