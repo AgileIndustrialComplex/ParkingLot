@@ -1,4 +1,5 @@
 using ParkingLot.Interfaces;
+using ParkingLot.Models;
 
 namespace ParkingLot;
 
@@ -26,7 +27,7 @@ public class ParkingLot : IParkingLot
             {
                 foreach (var spot in row)
                 {
-                    if (!parked.ContainsKey(spot))
+                    if (!parked.ContainsKey(spot) && CanPark(vehicle, spot))
                     {
                         parked[spot] = vehicle;
                         return spot;
@@ -36,6 +37,24 @@ public class ParkingLot : IParkingLot
         }
 
         throw new InvalidOperationException("No free spots left.");
+    }
+
+    public bool CanPark(IVehicle vehicle, IParkingSpot spot)
+    {
+        if (vehicle is Car && spot is CarParkingSpot)
+        {
+            return true;
+        }
+        if (vehicle is Motorcycle && spot is MotorcycleParkingSpot)
+        {
+            return true;
+        }
+        if (vehicle is Motorcycle && spot is CarParkingSpot)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     public void UnPark(IVehicle vehicle)

@@ -50,4 +50,29 @@ public class ParkingLotTest
 
         Assert.Throws<InvalidOperationException>(() => parkingLot.Park(new Car()));
     }
+
+    [Fact]
+    public void ParkingLot_Park_CarsCannotParkOnMotorcycleSpots()
+    {
+        ParkingLevel[] levels = [new([new ParkingRow([
+            new MotorcycleParkingSpot()
+        ])])];
+
+        ParkingLot parkingLot = new(levels);
+
+        Assert.Throws<InvalidOperationException>(() => parkingLot.Park(new Car()));
+    }
+
+    [Fact]
+    public void ParkingLot_Park_MotorcyclesCanParkOnCarSpots()
+    {
+        var spot = new CarParkingSpot();
+        ParkingLevel[] levels = [new([new ParkingRow([spot])])];
+
+        ParkingLot parkingLot = new(levels);
+
+        var actual = parkingLot.Park(new Motorcycle());
+
+        Assert.Equal(spot, actual);
+    }
 }
