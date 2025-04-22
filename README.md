@@ -9,3 +9,4 @@
 
 ## Issues
 1. selecting a free spot requires iterating through all spots in the lot, with current implementation can be alleviated by saving the state of iterator
+2. the implementation is not thread safe
