@@ -1,3 +1,5 @@
+using Moq;
+using ParkingLot.Interfaces;
 using ParkingLot.Models;
 
 namespace ParkingLot.Test;
@@ -5,7 +7,7 @@ namespace ParkingLot.Test;
 public class MotorcycleParkingLotValidatorTest
 {
     [Fact]
-    public void MotorcycleParkingLotValidator_VehicleType_IsCar()
+    public void MotorcycleParkingLotValidator_VehicleType_IsMotorcycle()
     {
         MotorcycleParkingLotValidator validator = new();
         Assert.Equal(typeof(Motorcycle), validator.VehicleType);
@@ -22,7 +24,7 @@ public class MotorcycleParkingLotValidatorTest
     }
 
     [Fact]
-    public void MotorcycleParkingLotValidator_CanPark_ReturnsTrueForCar()
+    public void MotorcycleParkingLotValidator_CanPark_ReturnsTrueForCarParkingSpot()
     {
         MotorcycleParkingLotValidator validator = new();
         var spot = new CarParkingSpot();
@@ -43,5 +45,15 @@ public class MotorcycleParkingLotValidatorTest
         var actual = validator.CanPark(car, spot);
 
         Assert.True(actual);
+    }
+
+    [Fact]
+    public void MotorcycleParkingLotValidator_CanPark_ThrowsForInvalidType()
+    {
+        MotorcycleParkingLotValidator validator = new();
+        var spot = new Mock<IParkingSpot>().Object;
+        var vehicle = new Mock<IVehicle>().Object;
+
+        Assert.Throws<InvalidOperationException>(() => validator.CanPark(vehicle, spot));
     }
 }

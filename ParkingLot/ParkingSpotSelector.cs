@@ -8,9 +8,10 @@ public class ParkingSpotSelector(IEnumerable<IParkingSpotValidator> validators) 
 
     public IParkingSpot GetSpot(IVehicle vehicle, IEnumerable<IParkingSpot> spots)
     {
+        var validatorsForVehicle = GetValidators(vehicle);
         foreach (var spot in spots)
         {
-            if (validators.All(v => v.CanPark(vehicle, spot)))
+            if (validatorsForVehicle.All(v => v.CanPark(vehicle, spot)))
             {
                 return spot;
             }

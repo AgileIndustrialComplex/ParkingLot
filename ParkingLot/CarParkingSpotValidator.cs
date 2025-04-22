@@ -3,17 +3,14 @@ using ParkingLot.Models;
 
 namespace ParkingLot;
 
-public class CarParkingLotValidator : IParkingSpotValidator
+public class CarParkingLotValidator : IVehicleTypeParkingSpotValidator
 {
     public Type VehicleType => typeof(Car);
 
     public bool CanPark(IVehicle vehicle, IParkingSpot spot)
     {
-        if (vehicle is not Car)
-        {
-            var typeName = vehicle.GetType().ToString();
-            throw new InvalidOperationException($"CarParkingLotValidator cannot be used with type: {typeName}");
-        }
+        IParkingSpotValidator.ThrowIfInvalidType<Car, CarParkingLotValidator>(vehicle);
+
         if (spot is CarParkingSpot)
         {
             return true;

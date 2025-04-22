@@ -6,18 +6,15 @@ namespace ParkingLot.Test;
 
 public class ParkingLotTest
 {
-    private readonly Mock<IParkingSpotValidator> validatorMock;
     private readonly Mock<IParkingSpotSelector> selectorMock;
     private readonly Mock<IParkingStorage> storageMock;
+    private readonly ParkingLot parkingLot;
 
     public ParkingLotTest()
     {
-        validatorMock = new Mock<IParkingSpotValidator>();
-        validatorMock.Setup(x => x.CanPark(It.IsAny<IVehicle>(), It.IsAny<IParkingSpot>())).Returns(true);
-
         selectorMock = new Mock<IParkingSpotSelector>();
-
         storageMock = new Mock<IParkingStorage>();
+        parkingLot = new ParkingLot([], storageMock.Object, selectorMock.Object);
     }
 
     [Fact]
@@ -31,24 +28,30 @@ public class ParkingLotTest
                 It.IsAny<IEnumerable<IParkingSpot>>()))
             .Returns(spot);
 
-
-        ParkingLot parkingLot = new([], storageMock.Object, selectorMock.Object);
-
         var actual = parkingLot.Park(vehicle);
 
         Assert.Equal(actual, spot);
+        storageMock.Verify(x => x.Create(vehicle, spot), Times.Once);
     }
 
     [Fact]
     public void ParkingLot_GetParkingVehicle_ReturnsParkedVehicleForSpot()
     {
-        CarParkingSpot spot = new();
-        var expected = new Car();
-        storageMock.Setup(x => x.Get(spot)).Returns(expected);
-
-        ParkingLot parkingLot = new([], storageMock.Object, selectorMock.Object);
+        var spot = new Mock<IParkingSpot>().Object;
+        var vehicle = new Mock<IVehicle>().Object;
+        storageMock.Setup(x => x.Get(spot)).Returns(vehicle);
 
         var actual = parkingLot.GetParkingVehicle(spot);
-        Assert.Equal(expected, actual);
+        Assert.Equal(vehicle, actual);
+    }
+
+    [Fact]
+    public void ParkingLot_UnPark_RemovesVehicleFromStorage()
+    {
+        var spot = new Mock<IParkingSpot>().Object;
+        var vehicle = new Mock<IVehicle>().Object;
+
+        parkingLot.UnPark(vehicle);
+        storageMock.Verify(x => x.Remove(vehicle), Times.Once);
     }
 }

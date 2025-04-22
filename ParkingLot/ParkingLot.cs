@@ -1,23 +1,12 @@
-using System.Data;
-using System.Data.SqlTypes;
-using Microsoft.VisualBasic;
 using ParkingLot.Interfaces;
-using ParkingLot.Models;
 
 namespace ParkingLot;
 
-public class ParkingLot : IParkingLot
+public class ParkingLot(IEnumerable<IParkingLevel> levels, IParkingStorage storage, IParkingSpotSelector selector) : IParkingLot
 {
-    private readonly IEnumerable<IParkingLevel> levels;
-    private readonly IParkingStorage storage;
-    private readonly IParkingSpotSelector selector;
-
-    public ParkingLot(IEnumerable<IParkingLevel> levels, IParkingStorage storage, IParkingSpotSelector selector)
-    {
-        this.levels = levels;
-        this.storage = storage;
-        this.selector = selector;
-    }
+    private readonly IEnumerable<IParkingLevel> levels = levels;
+    private readonly IParkingStorage storage = storage;
+    private readonly IParkingSpotSelector selector = selector;
 
     public IVehicle GetParkingVehicle(IParkingSpot spot)
     {
@@ -30,8 +19,11 @@ public class ParkingLot : IParkingLot
         var spot = selector.GetSpot(vehicle, GetParkingSpots());
         storage.Create(vehicle, spot);
         return spot;
+    }
 
-        throw new InvalidOperationException("No free spots left.");
+    public void UnPark(IVehicle vehicle)
+    {
+        storage.Remove(vehicle);
     }
 
     private IEnumerable<IParkingSpot> GetParkingSpots()
@@ -46,10 +38,5 @@ public class ParkingLot : IParkingLot
                 }
             }
         }
-    }
-
-    public void UnPark(IVehicle vehicle)
-    {
-        storage.Remove(vehicle);
     }
 }
