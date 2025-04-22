@@ -10,13 +10,13 @@ public class ParkingLot : IParkingLot
 {
     private readonly IEnumerable<IParkingLevel> levels;
     private readonly IParkingStorage storage;
-    private readonly Dictionary<Type, IParkingSpotValidator> validators;
+    private readonly IParkingSpotSelector selector;
 
-    public ParkingLot(IEnumerable<IParkingLevel> levels, IEnumerable<IParkingSpotValidator> validators, IParkingStorage storage)
+    public ParkingLot(IEnumerable<IParkingLevel> levels, IParkingStorage storage, IParkingSpotSelector selector)
     {
         this.levels = levels;
         this.storage = storage;
-        this.validators = validators.Select(v => KeyValuePair.Create(v.VehicleType, v)).ToDictionary();
+        this.selector = selector;
     }
 
     public IVehicle GetParkingVehicle(IParkingSpot spot)
@@ -27,33 +27,25 @@ public class ParkingLot : IParkingLot
 
     public IParkingSpot Park(IVehicle vehicle)
     {
-        var validator = GetValidator(vehicle);
+        var spot = selector.GetSpot(vehicle, GetParkingSpots());
+        storage.Create(vehicle, spot);
+        return spot;
+
+        throw new InvalidOperationException("No free spots left.");
+    }
+
+    private IEnumerable<IParkingSpot> GetParkingSpots()
+    {
         foreach (var level in levels)
         {
             foreach (var row in level)
             {
                 foreach (var spot in row)
                 {
-                    if (!storage.Has(spot) && validator.CanPark(vehicle, spot))
-                    {
-                        storage.Create(vehicle, spot);
-                        return spot;
-                    }
+                    yield return spot;
                 }
             }
         }
-
-        throw new InvalidOperationException("No free spots left.");
-    }
-
-    public IParkingSpotValidator GetValidator(IVehicle vehicle)
-    {
-        if (validators.TryGetValue(vehicle.GetType(), out var validator))
-        {
-            return validator;
-        }
-
-        throw new InvalidOperationException($"No validator found for type: {vehicle.GetType()}");
     }
 
     public void UnPark(IVehicle vehicle)
